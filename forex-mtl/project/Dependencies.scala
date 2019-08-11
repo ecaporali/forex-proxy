@@ -9,6 +9,7 @@ object Dependencies {
     val http4s              = "0.20.0"
     val circe               = "0.11.1"
     val pureConfig          = "0.11.1"
+    val enumeratum          = "1.5.13"
 
     val kindProjector       = "0.9.10"
     val logback             = "1.2.3"
@@ -24,6 +25,7 @@ object Dependencies {
     lazy val cats                = "org.typelevel"         %% "cats-core"                  % Versions.cats
     lazy val catsEffect          = "org.typelevel"         %% "cats-effect"                % Versions.catsEffect
     lazy val fs2                 = "co.fs2"                %% "fs2-core"                   % Versions.fs2
+    lazy val enumeratum          = "com.beachape"          %% "enumeratum"                 % Versions.enumeratum
 
     lazy val http4sDsl           = http4s("http4s-dsl")
     lazy val http4sServer        = http4s("http4s-blaze-server")
