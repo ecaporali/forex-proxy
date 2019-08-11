@@ -10,12 +10,18 @@ final case class ApplicationConfig(
 
 final case class HttpConfig(
     server: HttpServerConfig,
+    client: HttpClientConfig,
     oneForge: OneForgeConfig
 )
 
 final case class HttpServerConfig(
     host: String,
     port: Int,
+    timeout: FiniteDuration
+)
+
+final case class HttpClientConfig(
+    maxConnections: Int,
     timeout: FiniteDuration
 )
 
