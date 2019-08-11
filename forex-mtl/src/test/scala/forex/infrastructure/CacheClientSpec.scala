@@ -1,6 +1,7 @@
 package forex.infrastructure
 
 import cats.effect.IO
+import forex.TestInstances.testCaffeineCache
 import forex.TestUtilsIO
 import io.circe.Json
 import org.scalatest.{ FreeSpec, Matchers }
@@ -9,7 +10,7 @@ import scala.concurrent.duration._
 
 class CacheClientSpec extends FreeSpec with Matchers with TestUtilsIO {
 
-  val cacheClient: CacheClient[IO] = CacheClient[IO]
+  val cacheClient: CacheClient[IO] = CacheClient[IO](testCaffeineCache)
 
   "CacheClient" - {
 

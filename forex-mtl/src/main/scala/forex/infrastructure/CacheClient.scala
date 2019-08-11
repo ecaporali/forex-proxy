@@ -5,7 +5,6 @@ import cats.implicits._
 import io.circe.syntax.EncoderOps
 import io.circe.{ Decoder, Encoder, Json }
 import scalacache._
-import scalacache.caffeine.CaffeineCache
 
 import scala.concurrent.duration.Duration
 
@@ -27,9 +26,9 @@ class CacheClient[F[_]](implicit cache: Cache[Map[String, Json]], M: Mode[F], F:
 
 object CacheClient {
 
-  def apply[F[_]: Async]: CacheClient[F] = {
-    implicit val mode: Mode[F]                             = scalacache.CatsEffect.modes.async[F]
-    implicit val underlyingCache: Cache[Map[String, Json]] = CaffeineCache[Map[String, Json]]
+  def apply[F[_]: Async](underlyingCache: Cache[Map[String, Json]]): CacheClient[F] = {
+    implicit val mode: Mode[F]                   = scalacache.CatsEffect.modes.async[F]
+    implicit val cache: Cache[Map[String, Json]] = underlyingCache
     new CacheClient[F]
   }
 }

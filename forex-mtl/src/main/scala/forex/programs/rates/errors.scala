@@ -8,6 +8,7 @@ object errors {
   object Error {
     final case class RateLookupFailed(msg: String) extends Error
     final case class UnknownCurrency(msg: String) extends Error
+    final case class CachedRateNotFound(msg: String) extends Error
   }
 
   def toProgramError(error: RatesServiceError): Error = error match {

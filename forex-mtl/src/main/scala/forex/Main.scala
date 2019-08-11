@@ -6,9 +6,11 @@ import cats.effect._
 import cats.syntax.functor._
 import forex.config._
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.circe.Json
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.server.blaze.BlazeServerBuilder
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import scalacache.caffeine.CaffeineCache
 
 import scala.concurrent.ExecutionContext.fromExecutor
 
@@ -34,7 +36,9 @@ class Application[F[_]: ConcurrentEffect: Timer] {
 
       logger <- Stream.eval(Slf4jLogger.create[F])
 
-      module = Module[F](config, httpClient, logger)
+      caffeineCache <- Stream.eval(Sync[F].delay(CaffeineCache[Map[String, Json]]))
+
+      module = Module[F](config, httpClient, caffeineCache, logger)
 
       _ <- BlazeServerBuilder[F]
             .bindHttp(config.http.server.port, config.http.server.host)

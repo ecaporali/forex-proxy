@@ -10,7 +10,8 @@ object ConfigFixtures {
     HttpConfig(
       HttpServerConfig(host = "host", port = 1234, timeout = 10.seconds),
       HttpClientConfig(maxConnections = 1, timeout = 10.seconds),
-      OneForgeConfig(uri = Uri.unsafeFromString("http://test.com"), apiKey = "api-key")
+      OneForgeConfig(uri = Uri.unsafeFromString("http://test.com"), apiKey = "api-key"),
+      RatesConfig(cacheKeyName = "cache-key", priceTimeout = 10.seconds)
     )
   )
 }

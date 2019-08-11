@@ -11,7 +11,8 @@ final case class ApplicationConfig(
 final case class HttpConfig(
     server: HttpServerConfig,
     client: HttpClientConfig,
-    oneForge: OneForgeConfig
+    oneForge: OneForgeConfig,
+    rates: RatesConfig
 )
 
 final case class HttpServerConfig(
@@ -28,4 +29,9 @@ final case class HttpClientConfig(
 final case class OneForgeConfig(
     uri: Uri,
     apiKey: String
+)
+
+final case class RatesConfig(
+    cacheKeyName: String,
+    priceTimeout: FiniteDuration
 )
