@@ -49,3 +49,9 @@ libraryDependencies ++= Seq(
   Libraries.scalaCheck       % Test,
   Libraries.catsScalaCheck   % Test
 )
+
+dependencyOverrides ++= Seq(
+  Libraries.cats,
+  Libraries.catsEffect,
+  Libraries.fs2
+)
