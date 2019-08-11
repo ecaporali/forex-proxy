@@ -1,17 +1,18 @@
 package forex
 
-import cats.effect.{ Concurrent, Timer }
+import cats.effect.{Concurrent, Timer}
 import forex.config.ApplicationConfig
 import forex.http.rates.RatesHttpRoutes
 import forex.infrastructure.HttpClient
 import forex.programs._
 import forex.services._
+import io.chrisdavenport.log4cats.Logger
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.implicits._
-import org.http4s.server.middleware.{ AutoSlash, Timeout }
+import org.http4s.server.middleware.{AutoSlash, Timeout}
 
-class Module[F[_]: Concurrent: Timer] private (
+class Module[F[_]: Concurrent: Timer: Logger] private (
     config: ApplicationConfig,
     httpClient: HttpClient[F]
 ) {
@@ -49,10 +50,13 @@ class Module[F[_]: Concurrent: Timer] private (
 object Module {
   def apply[F[_]: Concurrent: Timer](
       config: ApplicationConfig,
-      httpBlazeClient: Client[F]
-  ): Module[F] =
+      httpBlazeClient: Client[F],
+      http4log: Logger[F]
+  ): Module[F] = {
+    implicit val logger: Logger[F] = http4log
     new Module[F](
       config = config,
       httpClient = new HttpClient[F](httpBlazeClient),
     )
+  }
 }

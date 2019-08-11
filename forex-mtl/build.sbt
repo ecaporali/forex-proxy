@@ -48,6 +48,9 @@ libraryDependencies ++= Seq(
   Libraries.pureConfigHttp4s,
   Libraries.logback,
   Libraries.enumeratum,
+  Libraries.log4catsCore,
+  Libraries.log4catsSlf4j,
+  Libraries.log4catsNoop,
   Libraries.scalaTest        % Test,
   Libraries.scalaCheck       % Test,
   Libraries.catsScalaCheck   % Test
