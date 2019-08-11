@@ -51,9 +51,11 @@ libraryDependencies ++= Seq(
   Libraries.log4catsCore,
   Libraries.log4catsSlf4j,
   Libraries.log4catsNoop,
-  Libraries.scalaTest        % Test,
-  Libraries.scalaCheck       % Test,
-  Libraries.catsScalaCheck   % Test
+  Libraries.scalaCacheEffect,
+  Libraries.scalaCacheCaffeine,
+  Libraries.scalaTest               % Test,
+  Libraries.scalaCheck              % Test,
+  Libraries.catsScalaCheck          % Test
 )
 
 dependencyOverrides ++= Seq(
