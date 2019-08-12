@@ -10,7 +10,7 @@ class OneForgeApiSpec extends FreeSpec with Matchers {
   "buildOneForgeQuotesRequest" - {
     "should successfully decode GetRatesResponse containing OneForgeRatePair" in {
       val oneForgeConfig = testApplicationConfig.http.oneForge
-      val actualRequest = OneForgeApi.buildOneForgeQuotesRequest(oneForgeConfig)
+      val actualRequest = OneForgeApi.buildOneForgeRequestQuotes(oneForgeConfig)
       actualRequest.uri.renderString should include("/quotes")
       actualRequest.method shouldBe Method.GET
       actualRequest.params("pairs") shouldBe fromToPairs.map(_.asString).mkString(",")

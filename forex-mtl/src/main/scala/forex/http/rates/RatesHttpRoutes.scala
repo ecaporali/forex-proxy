@@ -12,12 +12,12 @@ import forex.http.rates.Protocol._
 import forex.http.rates.QueryParams._
 import forex.programs.ProgramErrorOr
 import forex.programs.rates.Protocol.GetRatesRequest
-import forex.programs.rates.errors.Error.{ CachedRateNotFound, RateLookupFailed, UnknownCurrency }
-import forex.programs.rates.{ Protocol => RatesProgramProtocol }
+import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed, ServiceTemporaryUnavailable, UnknownCurrency}
+import forex.programs.rates.{Protocol => RatesProgramProtocol}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
-import org.http4s.{ HttpRoutes, Response }
+import org.http4s.{HttpRoutes, Response}
 
 class RatesHttpRoutes[F[_]: Logger](
     handleGetRate: GetRatesRequest => F[ProgramErrorOr[Rate]]
@@ -37,10 +37,11 @@ class RatesHttpRoutes[F[_]: Logger](
       rateOrError
         .flatMap(rate => Ok(rate.asGetApiResponse))
         .recoverWith {
-          case UnknownCurrency(msg)     => BadRequest(ApiErrorResponse(msg))
-          case CachedRateNotFound(msg)  => NotFound(ApiErrorResponse(msg))
-          case RateLookupFailed(msg)    => BadGateway(ApiErrorResponse(msg))
-          case uncaughtError: Throwable => logAndReturnInternalError(uncaughtError)
+          case UnknownCurrency(msg)             => BadRequest(ApiErrorResponse(msg))
+          case CachedRateNotFound(msg)          => NotFound(ApiErrorResponse(msg))
+          case RateLookupFailed(msg)            => BadGateway(ApiErrorResponse(msg))
+          case ServiceTemporaryUnavailable(msg) => ServiceUnavailable(ApiErrorResponse(msg))
+          case uncaughtError: Throwable         => logAndReturnInternalError(uncaughtError)
         }
         .map(_.withHeaders(JsonContentTypeHeader))
     }

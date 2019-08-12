@@ -1,7 +1,6 @@
 package forex.programs.rates
 
 import forex.domain.Rate
-import forex.services.rates.Protocol.RateResponse
 
 object Converters {
 
@@ -15,15 +14,10 @@ object Converters {
       )
   }
 
-  private[rates] implicit class RateResponseOps(val rateResponse: RateResponse) {
-    def toRateEntry: (String, Rate) =
-      (
-        rateResponse.pair.asString,
-        Rate(
-          rateResponse.pair,
-          price = rateResponse.price,
-          timestamp = rateResponse.timestamp
-        )
-      )
+  private[rates] implicit class RateResponseOps(val rates: Seq[Rate]) {
+    def toRatesMap: Map[String, Rate] =
+      rates.map { rate =>
+        (rate.pair.asString, Rate(rate.pair, rate.price, rate.timestamp))
+      }.toMap
   }
 }

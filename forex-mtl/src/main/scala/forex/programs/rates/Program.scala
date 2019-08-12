@@ -12,20 +12,19 @@ import forex.programs.ProgramErrorOr
 import forex.programs.rates.Converters._
 import forex.programs.rates.errors.Error.CachedRateNotFound
 import forex.programs.rates.errors.{Error, toProgramError}
-import forex.services.rates.Protocol.GetRatesResponse
 import forex.services.{RatesService, ServiceErrorOr}
 import io.chrisdavenport.log4cats.Logger
 
 class Program[F[_]: Logger] private[rates] (
-    getFreshRates: => F[ServiceErrorOr[GetRatesResponse]],
+    getFreshRates: => F[ServiceErrorOr[Seq[Rate]]],
     getCachedRate: String => F[Option[Rate]],
     setCachedRates: Map[String, Rate] => F[Done]
 )(implicit F: Sync[F])
     extends Algebra[F] {
 
   override def get(request: Protocol.GetRatesRequest): F[ProgramErrorOr[Rate]] =
-    if (request.from =!= request.to) executeGetRequest(request.asPair)
-    else F.pure(Rate(request.asPair, Price(1), Timestamp.now).asRight)
+    if (request.from === request.to) F.pure(getFlatRate(request).asRight)
+    else executeGetRequest(request.asPair)
 
   private def executeGetRequest(requestPair: Rate.Pair): F[ProgramErrorOr[Rate]] =
     for {
@@ -40,9 +39,9 @@ class Program[F[_]: Logger] private[rates] (
 
   private def refreshRates: F[Map[String, Rate]] =
     for {
-      getRatesResponseOrError <- getFreshRates
-      ratesResponse <- F.fromEither(getRatesResponseOrError.map(_.rates).leftMap(toProgramError))
-      ratesMap = ratesResponse.map(_.toRateEntry).toMap
+      getRatesOrError <- getFreshRates
+      rates <- F.fromEither(getRatesOrError.leftMap(toProgramError))
+      ratesMap = rates.toRatesMap
       _ <- Logger[F].info("Updating cache with fresh rates")
       _ <- setCachedRates(ratesMap)
     } yield ratesMap
@@ -51,6 +50,9 @@ class Program[F[_]: Logger] private[rates] (
     ratesMap
       .get(requestPair.asString)
       .toRight(CachedRateNotFound("Requested rate cannot be found"))
+
+  private def getFlatRate(request: Protocol.GetRatesRequest): Rate =
+    Rate(request.asPair, Price(1), Timestamp.now)
 }
 
 object Program {

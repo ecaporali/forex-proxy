@@ -5,7 +5,7 @@ import forex.TestInstances.noopLogger
 import forex.TestUtilsIO
 import forex.domain.{Currency, RateFixtures}
 import forex.http.rates.ProtocolFixtures.buildGetApiResponse
-import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed}
+import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed, ServiceTemporaryUnavailable}
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{Http4sLiteralSyntax, Method, Request, Response, Status, Uri}
@@ -43,6 +43,7 @@ class RatesHttpRoutesSpec extends FreeSpec with Matchers with Http4sDsl[IO] with
           request.from match {
             case Currency.AUD => IO(Left(RateLookupFailed("OneForge bad message!")))
             case Currency.EUR => IO(Left(CachedRateNotFound("The requested rate was not found!")))
+            case Currency.JPY => IO(Left(ServiceTemporaryUnavailable("Too many requests sent!")))
             case _            => IO.raiseError(new RuntimeException("Uncaught BAD exception!"))
           }
       )
@@ -50,6 +51,7 @@ class RatesHttpRoutesSpec extends FreeSpec with Matchers with Http4sDsl[IO] with
       lazy val ratesEndpoints: List[(Request[IO], String, Status)] = List(
         (request(uri = uri"/v1/rates?from=AUD&to=JPY", method = GET), """{"error":"OneForge bad message!"}""", Status.BadGateway),
         (request(uri = uri"/v1/rates?from=EUR&to=JPY", method = GET), """{"error":"The requested rate was not found!"}""", Status.NotFound),
+        (request(uri = uri"/v1/rates?from=JPY&to=EUR", method = GET), """{"error":"Too many requests sent!"}""", Status.ServiceUnavailable),
         (request(uri = uri"/v1/rates?from=USD&to=JPY", method = GET), """{"error":"Uncaught BAD exception!"}""", Status.InternalServerError)
       )
 

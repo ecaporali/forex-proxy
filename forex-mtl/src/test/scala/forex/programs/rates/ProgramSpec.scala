@@ -7,8 +7,6 @@ import forex.domain.Currency.{AUD, JPY}
 import forex.domain.{Price, Rate, RateFixtures, Timestamp}
 import forex.infrastructure.Done
 import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed}
-import forex.services.rates.Protocol.GetRatesResponse
-import forex.services.rates.ProtocolFixtures.{buildGetRatesResponse, buildOneForgeRateResponse}
 import forex.services.rates.errors.Error.OneForgeLookupFailed
 import org.scalatest.{FreeSpec, Matchers}
 
@@ -22,7 +20,7 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
 
       "should get cached rates when are found" in {
         val program: Program[IO] = new Program[IO](
-          IO.pure(Right(buildGetRatesResponse())),
+          IO.pure(Right(Vector(RateFixtures.buildRate()))),
           _ => IO.pure(Some(rate)),
           _ => IO.pure(Done)
         )
@@ -35,9 +33,7 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
         val rate = Rate(Rate.Pair(from = AUD, to = JPY), Price(123.1234), Timestamp(testOffsetDateTime))
 
         val program: Program[IO] = new Program[IO](
-          IO.pure(
-            Right(buildGetRatesResponse(Vector(buildOneForgeRateResponse(rate.pair, rate.price, rate.timestamp.value))))
-          ),
+          IO.pure(Right(Vector(rate))),
           _ => IO.pure(None),
           _ => IO.pure(Done)
         )
@@ -48,7 +44,7 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
 
       "should get a fixed rate when the currencies are the same" in {
         val program: Program[IO] = new Program[IO](
-          IO.pure(Right(buildGetRatesResponse())),
+          IO.pure(Right(Vector(rate))),
           _ => IO.pure(None),
           _ => IO.pure(Done)
         )
@@ -76,7 +72,7 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
 
       "should return CachedRateNotFound exception when it fails to get fresh rates" in {
         val program: Program[IO] = new Program[IO](
-          IO.pure(Right(GetRatesResponse(Vector.empty))),
+          IO.pure(Right(Vector.empty)),
           _ => IO.pure(None),
           _ => IO.pure(Done)
         )
