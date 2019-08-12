@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ConvertersSpec extends FlatSpec with Matchers {
 
-  "RateResponse converters toRateEntry" should "successfully convert a RateResponse into a pair" in {
+  "toRates" should "successfully convert a GetRatesResponse into rates" in {
     val getRateResponse = ProtocolFixtures.buildGetRatesResponse()
     val expectedRate    = getRateResponse.rates.head
     val expectedResult  = Seq(Rate(expectedRate.pair, expectedRate.price, expectedRate.timestamp))
