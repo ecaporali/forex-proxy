@@ -5,8 +5,9 @@ import java.time.OffsetDateTime
 import forex.TestInstances.testOffsetDateTime
 import forex.domain.Currency.{ EUR, USD }
 import forex.domain.{ Price, Rate, Timestamp }
-import forex.services.rates.Protocol.OneForgeProtocol.GetQuotaResponse
-import forex.services.rates.Protocol.{ GetRatesResponse, OneForgeProtocol }
+import forex.services.rates.Protocol.GetQuotaResponse.OneForgeQuotaResponse
+import forex.services.rates.Protocol.GetRatesResponse.OneForgeRateResponse
+import forex.services.rates.Protocol.{ GetQuotaResponse, GetRatesResponse }
 
 object ProtocolFixtures {
 
@@ -18,7 +19,7 @@ object ProtocolFixtures {
       pair: Rate.Pair = Rate.Pair(from = EUR, to = USD),
       price: Price = Price(123.1234),
       timestamp: OffsetDateTime = testOffsetDateTime
-  ): OneForgeProtocol.RateResponse = OneForgeProtocol.RateResponse(
+  ): OneForgeRateResponse = OneForgeRateResponse(
     pair = pair,
     price = price,
     timestamp = Timestamp(timestamp)
@@ -29,10 +30,11 @@ object ProtocolFixtures {
       quotaLimit: Int = 11,
       quotaRemaining: Int = 1,
       hoursUntilReset: Int = 1
-  ): GetQuotaResponse = GetQuotaResponse(
-    quotaUsed = quotaUsed,
-    quotaLimit = quotaLimit,
-    quotaRemaining = quotaRemaining,
-    hoursUntilReset = hoursUntilReset
-  )
+  ): GetQuotaResponse =
+    GetQuotaResponse(
+      OneForgeQuotaResponse(
+        remaining = quotaRemaining,
+        hoursUntilReset = hoursUntilReset
+      )
+    )
 }

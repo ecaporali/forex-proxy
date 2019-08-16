@@ -8,56 +8,57 @@ import io.circe.{Decoder, HCursor}
 
 object Protocol {
 
-  case class GetRatesResponse(
-      rates: Seq[RateResponse]
-  )
+  case class GetRatesResponse(rates: Seq[RateResponse])
+  case class GetQuotaResponse(quota: QuotaResponse)
 
   sealed trait RateResponse {
-    val pair: Rate.Pair
-    val price: Price
-    val timestamp: Timestamp
+    def pair: Rate.Pair
+    def price: Price
+    def timestamp: Timestamp
+  }
+
+  sealed trait QuotaResponse {
+    def remaining: Int
+    def hoursUntilReset: Int
+  }
+
+  object GetRatesResponse {
+
+    final case class OneForgeRateResponse(pair: Rate.Pair, price: Price, timestamp: Timestamp) extends RateResponse
+
+    private[rates] val oneForgeRateResponseDecoder: Decoder[RateResponse] = (cursor: HCursor) =>
+      for {
+        rawSymbol <- cursor.downField("symbol").as[String]
+        from <- fromString(rawSymbol.take(3)).as[Currency]
+        to <- fromString(rawSymbol.drop(3)).as[Currency]
+        price <- cursor.downField("price").as[Price]
+        timestamp <- cursor.downField("timestamp").as[Timestamp]
+      } yield OneForgeRateResponse(Rate.Pair(from, to), price, timestamp)
+  }
+
+  object GetQuotaResponse {
+
+    final case class OneForgeQuotaResponse(remaining: Int, hoursUntilReset: Int) extends QuotaResponse
+
+    private[rates] val oneForgeQuotaResponseDecoder: Decoder[OneForgeQuotaResponse] =
+      (cursor: HCursor) =>
+        for {
+          quotaRemaining <- cursor.downField("quota_remaining").as[Int]
+          hoursUntilReset <- cursor.downField("hours_until_reset").as[Int]
+        } yield OneForgeQuotaResponse(quotaRemaining, hoursUntilReset)
+  }
+
+  lazy implicit val rateResponseDecoder: Decoder[RateResponse] = {
+    GetRatesResponse.oneForgeRateResponseDecoder.widen
+  }
+
+  lazy implicit val quotaResponseDecoder: Decoder[QuotaResponse] = {
+    GetQuotaResponse.oneForgeQuotaResponseDecoder.widen
   }
 
   lazy implicit val getRatesResponseDecoder: Decoder[GetRatesResponse] =
     deriveUnwrappedDecoder
 
-  lazy implicit val rateResponseDecoder: Decoder[RateResponse] =
-    List[Decoder[RateResponse]](
-      OneForgeProtocol.decodeOneForgeRateResponse.widen,
-    ).reduceLeft(_ or _)
-
-  object OneForgeProtocol {
-
-    case class GetQuotaResponse(
-        quotaUsed: Int,
-        quotaLimit: Int,
-        quotaRemaining: Int,
-        hoursUntilReset: Int
-    )
-
-    final case class RateResponse(
-        pair: Rate.Pair,
-        price: Price,
-        timestamp: Timestamp
-    ) extends Protocol.RateResponse
-
-    implicit def decodeOneForgeQuota: Decoder[GetQuotaResponse] =
-      (cursor: HCursor) =>
-        for {
-          quotaUsed <- cursor.downField("quota_used").as[Int]
-          quotaLimit <- cursor.downField("quota_limit").as[Int]
-          quotaRemaining <- cursor.downField("quota_remaining").as[Int]
-          hoursUntilReset <- cursor.downField("hours_until_reset").as[Int]
-        } yield GetQuotaResponse(quotaUsed, quotaLimit, quotaRemaining, hoursUntilReset)
-
-    private[rates] def decodeOneForgeRateResponse: Decoder[OneForgeProtocol.RateResponse] =
-      (cursor: HCursor) =>
-        for {
-          rawSymbol <- cursor.downField("symbol").as[String]
-          from <- fromString(rawSymbol.take(3)).as[Currency]
-          to <- fromString(rawSymbol.drop(3)).as[Currency]
-          price <- cursor.downField("price").as[Price]
-          timestamp <- cursor.downField("timestamp").as[Timestamp]
-        } yield RateResponse(Rate.Pair(from, to), price, timestamp)
-  }
+  lazy implicit val getQuotaResponseDecoder: Decoder[GetQuotaResponse] =
+    deriveUnwrappedDecoder
 }

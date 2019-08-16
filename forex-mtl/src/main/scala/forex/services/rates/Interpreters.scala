@@ -3,8 +3,7 @@ package forex.services.rates
 import cats.effect.Sync
 import forex.config.HttpConfig
 import forex.infrastructure.HttpClient
-import forex.services.rates.Protocol.GetRatesResponse
-import forex.services.rates.Protocol.OneForgeProtocol.GetQuotaResponse
+import forex.services.rates.Protocol.{GetQuotaResponse, GetRatesResponse}
 import forex.services.rates.interpreters._
 import io.chrisdavenport.log4cats.Logger
 

@@ -7,13 +7,12 @@ import forex.config.OneForgeConfig
 import forex.domain.Rate
 import forex.infrastructure.ErrorOr
 import forex.services.ServiceErrorOr
-import forex.services.rates.Protocol.GetRatesResponse
-import forex.services.rates.Protocol.OneForgeProtocol.GetQuotaResponse
+import forex.services.rates.Converters._
+import forex.services.rates.Protocol.{GetQuotaResponse, GetRatesResponse}
 import forex.services.rates.errors.Error.{OneForgeLookupFailed, OneForgeQuotaLimitExceeded}
 import forex.services.rates.{Algebra, OneForgeApi}
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.Request
-import forex.services.rates.Converters._
 
 class OneForgeInterpreter[F[_]: Logger](
     oneForgeConfig: OneForgeConfig,
@@ -32,8 +31,8 @@ class OneForgeInterpreter[F[_]: Logger](
     val oneForgeRequestQuota = OneForgeApi.buildOneForgeRequestQuota[F](oneForgeConfig)
     for {
       _ <- Logger[F].info(s"Fetching current quota from OneForge: ${oneForgeRequestQuota.uri.path}")
-      quotaResponse <- fetchQuota(oneForgeRequestQuota).flatMap(F.fromEither)
-    } yield verifyQuotaLimit(quotaResponse)
+      getQuotaResponse <- fetchQuota(oneForgeRequestQuota).flatMap(F.fromEither)
+    } yield verifyQuotaLimit(getQuotaResponse)
   }
 
   private def executeFetchRates: F[ServiceErrorOr[GetRatesResponse]] = {
@@ -44,9 +43,11 @@ class OneForgeInterpreter[F[_]: Logger](
     } yield errorOrRatesResponse
   }
 
-  private def verifyQuotaLimit(quotaResponse: GetQuotaResponse): ServiceErrorOr[GetQuotaResponse] =
-    if (quotaResponse.quotaRemaining > 0) Either.right(quotaResponse)
-    else Either.left(OneForgeQuotaLimitExceeded(s"Maximum daily quota reached, please try again in ${quotaResponse.hoursUntilReset} hour(s)"))
+  private def verifyQuotaLimit(getQuotaResponse: GetQuotaResponse): ServiceErrorOr[GetQuotaResponse] = {
+    val quota = getQuotaResponse.quota
+    if (quota.remaining > 0) Either.right(getQuotaResponse)
+    else Either.left(OneForgeQuotaLimitExceeded(s"Maximum daily quota reached, please try again in ${quota.hoursUntilReset} hour(s)"))
+  }
 
   private def logAndTransformError(
       errorOrResponse: ErrorOr[GetRatesResponse]

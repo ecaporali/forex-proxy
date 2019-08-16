@@ -6,8 +6,8 @@ import forex.TestUtilsIO
 import forex.domain.Currency.{AUD, JPY}
 import forex.domain.{Price, Rate, RateFixtures, Timestamp}
 import forex.infrastructure.Done
-import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed}
-import forex.services.rates.errors.Error.OneForgeLookupFailed
+import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed, ServiceTemporaryUnavailable}
+import forex.services.rates.errors.Error.{OneForgeLookupFailed, OneForgeQuotaLimitExceeded}
 import org.scalatest.{FreeSpec, Matchers}
 
 class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
@@ -68,6 +68,17 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
 
         val expectedProgram = program.get(Protocol.GetRatesRequest(AUD, JPY))
         an [RateLookupFailed] should be thrownBy runIO(expectedProgram)
+      }
+
+      "should return ServiceTemporaryUnavailable exception when it exceeds the daily quota to fetch fresh rates" in {
+        val program: Program[IO] = new Program[IO](
+          IO.pure(Left(OneForgeQuotaLimitExceeded("Quota limit exceeded"))),
+          _ => IO.pure(None),
+          _ => IO.pure(Done)
+        )
+
+        val expectedProgram = program.get(Protocol.GetRatesRequest(AUD, JPY))
+        an [ServiceTemporaryUnavailable] should be thrownBy runIO(expectedProgram)
       }
 
       "should return CachedRateNotFound exception when it fails to get fresh rates" in {

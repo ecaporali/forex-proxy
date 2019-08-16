@@ -59,9 +59,9 @@ object Module {
       config: ApplicationConfig,
       httpBlazeClient: Client[F],
       scalaCache: Cache[Map[String, Json]],
-      http4log: Logger[F]
+      log4cats: Logger[F]
   ): Module[F] = {
-    implicit val logger: Logger[F] = http4log
+    implicit val logger: Logger[F] = log4cats
     new Module[F](
       config = config,
       httpClient = new HttpClient[F](httpBlazeClient),
