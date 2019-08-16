@@ -29,7 +29,7 @@ The following points summarize the decisions made:
 - `log4cats` was chosen to have effectful logging throughout the codebase (with `cats` support for `IO` monad)
 - `enumeratum` was chosen to maximise the use of the currency domain objects which provides useful benefits. For example, the function `findValues` 
   will remove the risk of forgetting to add/remove other currencies to/from a custom list require to calculate the unique product between them.
-  I am not really in favour of Enumeration, but considering the use case and this library's documentation, I decided to add it to the project.
+  I am not really in favour of using enumerations in scala, but considering the use case and this library's documentation, I decided to add it to the project.
 
 ## Assumptions
 The main assumptions taken while developing this application are as follow:
@@ -57,16 +57,28 @@ in order to run this project, the `ONE_FORGE_API_KEY` environment variable must 
 sbt test
 ```
 
+### How to run unit tests with coverage
+```
+sbt check
+```
+
 ### How to run the application
 ```
 sbt run
 ```
+
+## Coverage
+The coverage percentage for this project must be above **95%** and it currently stands at:  
+`96.37%`
 
 ## Additional possible improvements
 - Include integration tests and load tests (possibly with `Gatlin`) to assert the performance and response of this proxy and the upstream
   OneForge Api.
 - If a distributed cache is required, in case multiple service instances read/write to it, `Caffeine` cache should be replaced with
   `Redis` or `Memcache` which are perfect for this use case.
+- Add docker support for application by including a `docker-compose.yml` file.
+- If multiple Rates interpreters are included, the `/quota` request could be added into the algebra as `/healthcheck` and used in the Program to route requests
+  to the first interpreter having remaining quota > 0.  
 
 ## Library reference
 - [scalacache](https://cb372.github.io/scalacache/) 
