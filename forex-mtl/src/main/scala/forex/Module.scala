@@ -58,7 +58,7 @@ object Module {
   def apply[F[_]: Concurrent: Timer](
       config: ApplicationConfig,
       httpBlazeClient: Client[F],
-      scalaCache: Cache[Map[Any, Json]],
+      scalaCache: Cache[Map[Json, Json]],
       log4cats: Logger[F]
   ): Module[F] = {
     implicit val logger: Logger[F] = log4cats

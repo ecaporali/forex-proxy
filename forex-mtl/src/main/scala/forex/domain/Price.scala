@@ -3,7 +3,7 @@ package forex.domain
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 
-case class Price(value: BigDecimal) extends AnyVal
+final case class Price(value: BigDecimal) extends AnyVal
 
 object Price {
   def apply(value: Int): Price =

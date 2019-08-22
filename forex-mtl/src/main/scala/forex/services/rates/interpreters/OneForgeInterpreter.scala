@@ -1,7 +1,7 @@
 package forex.services.rates.interpreters
 
+import cats.MonadError
 import cats.data.EitherT
-import cats.effect.Sync
 import cats.implicits._
 import forex.config.OneForgeConfig
 import forex.domain.Rate
@@ -18,7 +18,7 @@ class OneForgeInterpreter[F[_]: Logger](
     oneForgeConfig: OneForgeConfig,
     fetchRates: Request[F] => F[ErrorOr[GetRatesResponse]],
     fetchQuota: Request[F] => F[ErrorOr[GetQuotaResponse]]
-)(implicit F: Sync[F])
+)(implicit F: MonadError[F, Throwable])
     extends Algebra[F] {
 
   override def getRates: F[ServiceErrorOr[Seq[Rate]]] =

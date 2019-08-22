@@ -1,10 +1,10 @@
 package forex.programs.rates
 
-import cats.effect.Sync
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.{FlatMap, MonadError}
 import forex.config.RatesConfig
 import forex.domain._
 import forex.infrastructure.{CacheClient, Done}
@@ -15,11 +15,11 @@ import forex.programs.rates.errors.{Error, toProgramError}
 import forex.services.{RatesService, ServiceErrorOr}
 import io.chrisdavenport.log4cats.Logger
 
-class Program[F[_]: Logger] private[rates] (
+class Program[F[_]: FlatMap: Logger] private[rates](
     getFreshRates: => F[ServiceErrorOr[Seq[Rate]]],
     getCachedRate: Rate.Pair => F[Option[Rate]],
     setCachedRates: Map[Rate.Pair, Rate] => F[Done]
-)(implicit F: Sync[F])
+)(implicit F: MonadError[F, Throwable])
     extends Algebra[F] {
 
   override def get(request: Protocol.GetRatesRequest): F[ProgramErrorOr[Rate]] =
@@ -29,17 +29,20 @@ class Program[F[_]: Logger] private[rates] (
   private def executeGetRequest(requestPair: Rate.Pair): F[ProgramErrorOr[Rate]] =
     for {
       maybeRate   <- getCachedRate(requestPair)
-      errorOrRate <- lookupRate(requestPair, maybeRate, getOrRefreshRates(requestPair, maybeRate))
+      errorOrRate <- maybeLookupRate(requestPair, maybeRate, getOrRefreshRates(requestPair, maybeRate))
     } yield errorOrRate
 
+  // This method is synchronized to ensure requests are NOT made concurrently to refresh rates
+  // The additional call to `getCachedRate` is required to verify that the cache was NOT updated while waiting for the lock to be released
+  // If the synchronized keyword is removed, we might end up in the situation where requests could refresh rates concurrently hence exceeding the quota limit
   private def getOrRefreshRates(requestPair: Rate.Pair, maybeRate: Option[Rate]): F[ProgramErrorOr[Rate]] = synchronized {
     for {
       maybeConsistentRate <- getCachedRate(requestPair)
-      errorOrRate         <- lookupRate(requestPair, maybeConsistentRate, refreshRates.map(findMatchingRateOrError(requestPair)))
+      errorOrRate         <- maybeLookupRate(requestPair, maybeConsistentRate, refreshRates.map(findMatchingRateOrError(requestPair)))
     } yield errorOrRate
   }
 
-  private def lookupRate(
+  private def maybeLookupRate(
       requestPair: Rate.Pair,
       maybeRate: Option[Rate],
       getRefreshedRate: => F[ProgramErrorOr[Rate]]
@@ -66,11 +69,11 @@ class Program[F[_]: Logger] private[rates] (
 
 object Program {
 
-  def apply[F[_]: Sync: Logger](
+  def apply[F[_]: Logger](
       config: RatesConfig,
       ratesService: RatesService[F],
       cacheClient: CacheClient[F]
-  ): Algebra[F] = new Program[F](
+  )(implicit F: MonadError[F, Throwable]): Algebra[F] = new Program[F](
     getFreshRates = ratesService.getRates,
     getCachedRate = cacheClient.getEntryValue[Rate.Pair, Rate](
       cacheKeyName = config.cacheKeyName

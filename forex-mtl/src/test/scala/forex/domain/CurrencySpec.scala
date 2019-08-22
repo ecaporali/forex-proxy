@@ -17,7 +17,7 @@ class CurrencySpec extends FreeSpec with Matchers {
 
     "fromToPairs" - {
       "should construct the product of all unique currency pair" in {
-        fromToPairs.size shouldBe ((values.size * values.size) - values.size)
+        uniqueProductPairs.size shouldBe ((values.size * values.size) - values.size)
       }
     }
 

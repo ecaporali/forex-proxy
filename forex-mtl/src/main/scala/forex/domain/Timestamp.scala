@@ -8,7 +8,7 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
 
-case class Timestamp(value: OffsetDateTime) extends AnyVal
+final case class Timestamp(value: OffsetDateTime) extends AnyVal
 
 object Timestamp {
   def now: Timestamp =

@@ -34,7 +34,7 @@ class Application[F[_]: ConcurrentEffect: Timer] {
                      .stream
 
       logger        <- Stream.eval(Slf4jLogger.create[F])
-      caffeineCache <- Stream.eval(Sync[F].delay(CaffeineCache[Map[Any, Json]]))
+      caffeineCache <- Stream.eval(Sync[F].delay(CaffeineCache[Map[Json, Json]]))
 
       module = Module[F](config, httpClient, caffeineCache, logger)
 

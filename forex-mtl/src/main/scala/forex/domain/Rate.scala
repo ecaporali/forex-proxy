@@ -3,7 +3,7 @@ package forex.domain
 import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.circe.{ Decoder, Encoder }
 
-case class Rate(
+final case class Rate(
     pair: Rate.Pair,
     price: Price,
     timestamp: Timestamp
