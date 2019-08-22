@@ -29,13 +29,22 @@ class Program[F[_]: Logger] private[rates] (
   private def executeGetRequest(requestPair: Rate.Pair): F[ProgramErrorOr[Rate]] =
     for {
       maybeRate   <- getCachedRate(requestPair)
-      errorOrRate <- getOrRefreshRates(requestPair, maybeRate)
+      errorOrRate <- lookupRate(requestPair, maybeRate, getOrRefreshRates(requestPair, maybeRate))
     } yield errorOrRate
 
-  private def getOrRefreshRates(requestPair: Rate.Pair, maybeRate: Option[Rate]): F[ProgramErrorOr[Rate]] =
-    maybeRate.fold(
-      refreshRates.map(findMatchingRateOrError(requestPair))
-    )(rate => F.pure(rate.asRight[Error]))
+  private def getOrRefreshRates(requestPair: Rate.Pair, maybeRate: Option[Rate]): F[ProgramErrorOr[Rate]] = synchronized {
+    for {
+      maybeConsistentRate <- getCachedRate(requestPair)
+      errorOrRate         <- lookupRate(requestPair, maybeConsistentRate, refreshRates.map(findMatchingRateOrError(requestPair)))
+    } yield errorOrRate
+  }
+
+  private def lookupRate(
+      requestPair: Rate.Pair,
+      maybeRate: Option[Rate],
+      getRefreshedRate: => F[ProgramErrorOr[Rate]]
+  ): F[ProgramErrorOr[Rate]] =
+    maybeRate.map(rate => F.pure(rate.asRight[Error])).getOrElse(getRefreshedRate)
 
   private def refreshRates: F[Map[Rate.Pair, Rate]] =
     for {
