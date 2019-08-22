@@ -29,9 +29,9 @@ object Protocol {
     private[rates] val oneForgeRateResponseDecoder: Decoder[RateResponse] = (cursor: HCursor) =>
       for {
         rawSymbol <- cursor.downField("symbol").as[String]
-        from <- fromString(rawSymbol.take(3)).as[Currency]
-        to <- fromString(rawSymbol.drop(3)).as[Currency]
-        price <- cursor.downField("price").as[Price]
+        from      <- fromString(rawSymbol.take(3)).as[Currency]
+        to        <- fromString(rawSymbol.drop(3)).as[Currency]
+        price     <- cursor.downField("price").as[Price]
         timestamp <- cursor.downField("timestamp").as[Timestamp]
       } yield OneForgeRateResponse(Rate.Pair(from, to), price, timestamp)
   }
@@ -40,12 +40,11 @@ object Protocol {
 
     final case class OneForgeQuotaResponse(remaining: Int, hoursUntilReset: Int) extends QuotaResponse
 
-    private[rates] val oneForgeQuotaResponseDecoder: Decoder[OneForgeQuotaResponse] =
-      (cursor: HCursor) =>
-        for {
-          quotaRemaining <- cursor.downField("quota_remaining").as[Int]
-          hoursUntilReset <- cursor.downField("hours_until_reset").as[Int]
-        } yield OneForgeQuotaResponse(quotaRemaining, hoursUntilReset)
+    private[rates] val oneForgeQuotaResponseDecoder: Decoder[OneForgeQuotaResponse] = (cursor: HCursor) =>
+      for {
+        quotaRemaining  <- cursor.downField("quota_remaining").as[Int]
+        hoursUntilReset <- cursor.downField("hours_until_reset").as[Int]
+      } yield OneForgeQuotaResponse(quotaRemaining, hoursUntilReset)
   }
 
   lazy implicit val rateResponseDecoder: Decoder[RateResponse] = {

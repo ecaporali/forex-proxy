@@ -19,17 +19,17 @@ class CacheClientSpec extends FreeSpec with Matchers with TestUtilsIO {
       runIO(cacheClient.putEntries(cacheKey, None)(Map("key1" -> "value1", "key2" -> "value2")))
 
       "should successfully retrieve entry value" in {
-        val expectedValue = cacheClient.getEntryValue[Json](cacheKey)("key2")
+        val expectedValue = cacheClient.getEntryValue[String, Json](cacheKey)("key2")
         runIO(expectedValue) shouldBe Some(Json.fromString("value2"))
       }
 
       "should return NONE when entry is not found" in {
-        val expectedValue = cacheClient.getEntryValue[Json](cacheKey)("MISSING-ENTRY-KEY")
+        val expectedValue = cacheClient.getEntryValue[String, Json](cacheKey)("MISSING-ENTRY-KEY")
         runIO(expectedValue) shouldBe None
       }
 
       "should return NONE when current cache is not found" in {
-        val expectedValue = cacheClient.getEntryValue[Json]("MISSING-CACHE-KEY")("key2")
+        val expectedValue = cacheClient.getEntryValue[String, Json]("MISSING-CACHE-KEY")("key2")
         runIO(expectedValue) shouldBe None
       }
     }
@@ -39,19 +39,19 @@ class CacheClientSpec extends FreeSpec with Matchers with TestUtilsIO {
       runIO(cacheClient.putEntries(cacheKey, Some(1.nano))(Map("key" -> "value")))
 
       "should return NONE when timeout is expired" in {
-        val expectedValue = cacheClient.getEntryValue[Json](cacheKey)("key")
+        val expectedValue = cacheClient.getEntryValue[String, Json](cacheKey)("key")
         runIO(expectedValue) shouldBe None
       }
     }
 
     "setEntries" - {
       "should successfully store entries" in {
-        val expectedResult = cacheClient.putEntries[String]("test-key", None)(Map("key1" -> "value1"))
+        val expectedResult = cacheClient.putEntries[String, Json]("test-key", None)(Map("key1" -> Json.fromString("value1")))
         runIO(expectedResult) shouldBe Done
       }
 
       "should short-circuit store operation when entries are empty" in {
-        val expectedResult = cacheClient.putEntries[String]("empty-map-key", None)(Map.empty)
+        val expectedResult = cacheClient.putEntries[String, Json]("empty-map-key", None)(Map.empty)
         runIO(expectedResult) shouldBe Done
       }
     }

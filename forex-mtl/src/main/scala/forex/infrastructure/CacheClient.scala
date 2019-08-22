@@ -8,27 +8,30 @@ import scalacache._
 
 import scala.concurrent.duration.Duration
 
-class CacheClient[F[_]](implicit cache: Cache[Map[String, Json]], M: Mode[F], F: Async[F]) {
+class CacheClient[F[_]](implicit cache: Cache[Map[Any, Json]], M: Mode[F], F: Async[F]) {
 
-  def getEntryValue[A: Decoder](cacheKeyName: String)(entryKey: String): F[Option[A]] =
+  def getEntryValue[K, V: Decoder](cacheKeyName: String)(entryKey: K): F[Option[V]] =
     for {
-      maybeValue <- F.map(get[F, Map[String, Json]](cacheKeyName))(_.flatMap(_.get(entryKey)))
-      decodedValueOrError = maybeValue.traverse(_.as[A])
-      decodedValue <- F.fromEither(decodedValueOrError)
+      maybeValue   <- F.map(get(cacheKeyName))(_.flatMap(_.get(entryKey)))
+      decodedValue <- F.fromEither(maybeValue.traverse(_.as[V]))
     } yield decodedValue
 
-  def putEntries[A: Encoder](cacheKeyName: String, timeout: Option[Duration])(
-    entries: Map[String, A]
+  def putEntries[K, V: Encoder](cacheKeyName: String, timeout: Option[Duration])(
+      entries: Map[K, V]
   ): F[Done] =
     if (entries.isEmpty) F.pure(Done)
-    else F.as(put[F, Map[String, Json]](cacheKeyName)(entries.mapValues(_.asJson), timeout), Done)
+    else
+      F.as(
+        put[F, Map[Any, Json]](cacheKeyName)(entries.map { case (key, value) => (key.asInstanceOf[Any], value.asJson) }, timeout),
+        Done
+      )
 }
 
 object CacheClient {
 
-  def apply[F[_]: Async](underlyingCache: Cache[Map[String, Json]]): CacheClient[F] = {
-    implicit val mode: Mode[F]                   = scalacache.CatsEffect.modes.async[F]
-    implicit val cache: Cache[Map[String, Json]] = underlyingCache
+  def apply[F[_]: Async](underlyingCache: Cache[Map[Any, Json]]): CacheClient[F] = {
+    implicit val mode: Mode[F]                = scalacache.CatsEffect.modes.async[F]
+    implicit val cache: Cache[Map[Any, Json]] = underlyingCache
     new CacheClient[F]
   }
 }

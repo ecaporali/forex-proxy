@@ -29,8 +29,8 @@ class RatesHttpRoutes[F[_]: Logger](
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root :? FromQueryParam(fromOrError) +& ToQueryParam(toOrError) => {
       val rateOrError = for {
-        from <- F.fromEither(fromOrError)
-        to <- F.fromEither(toOrError)
+        from        <- F.fromEither(fromOrError)
+        to          <- F.fromEither(toOrError)
         rateOrError <- handleGetRate(RatesProgramProtocol.GetRatesRequest(from, to)).flatMap(F.fromEither)
       } yield rateOrError
 
@@ -49,7 +49,7 @@ class RatesHttpRoutes[F[_]: Logger](
 
   private def logAndReturnInternalError(uncaughtError: Throwable): F[Response[F]] =
     for {
-      _ <- Logger[F].error(uncaughtError)("Something went wrong. Please try again or check the logs.")
+      _                   <- Logger[F].error(uncaughtError)("Something went wrong. Please try again or check the logs.")
       internalServerError <- InternalServerError(ApiErrorResponse(uncaughtError.getMessage))
     } yield internalServerError
 

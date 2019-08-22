@@ -17,8 +17,8 @@ import io.chrisdavenport.log4cats.Logger
 
 class Program[F[_]: Logger] private[rates] (
     getFreshRates: => F[ServiceErrorOr[Seq[Rate]]],
-    getCachedRate: String => F[Option[Rate]],
-    setCachedRates: Map[String, Rate] => F[Done]
+    getCachedRate: Rate.Pair => F[Option[Rate]],
+    setCachedRates: Map[Rate.Pair, Rate] => F[Done]
 )(implicit F: Sync[F])
     extends Algebra[F] {
 
@@ -28,7 +28,7 @@ class Program[F[_]: Logger] private[rates] (
 
   private def executeGetRequest(requestPair: Rate.Pair): F[ProgramErrorOr[Rate]] =
     for {
-      maybeRate <- getCachedRate(requestPair.asString)
+      maybeRate   <- getCachedRate(requestPair)
       errorOrRate <- getOrRefreshRates(requestPair, maybeRate)
     } yield errorOrRate
 
@@ -37,18 +37,18 @@ class Program[F[_]: Logger] private[rates] (
       refreshRates.map(findMatchingRateOrError(requestPair))
     )(rate => F.pure(rate.asRight[Error]))
 
-  private def refreshRates: F[Map[String, Rate]] =
+  private def refreshRates: F[Map[Rate.Pair, Rate]] =
     for {
       getRatesOrError <- getFreshRates
-      rates <- F.fromEither(getRatesOrError.leftMap(toProgramError))
-      ratesMap = rates.toRatesMap
+      rates           <- F.fromEither(getRatesOrError.leftMap(toProgramError))
+      ratesMap = rates.asRatesMap
       _ <- Logger[F].info("Updating cache with fresh rates")
       _ <- setCachedRates(ratesMap)
     } yield ratesMap
 
-  private def findMatchingRateOrError(requestPair: Rate.Pair)(ratesMap: Map[String, Rate]): ProgramErrorOr[Rate] =
+  private def findMatchingRateOrError(requestPair: Rate.Pair)(ratesMap: Map[Rate.Pair, Rate]): ProgramErrorOr[Rate] =
     ratesMap
-      .get(requestPair.asString)
+      .get(requestPair)
       .toRight(CachedRateNotFound("Requested rate cannot be found"))
 
   private def getFlatRate(request: Protocol.GetRatesRequest): Rate =
@@ -63,10 +63,10 @@ object Program {
       cacheClient: CacheClient[F]
   ): Algebra[F] = new Program[F](
     getFreshRates = ratesService.getRates,
-    getCachedRate = cacheClient.getEntryValue[Rate](
+    getCachedRate = cacheClient.getEntryValue[Rate.Pair, Rate](
       cacheKeyName = config.cacheKeyName
     ),
-    setCachedRates = cacheClient.putEntries[Rate](
+    setCachedRates = cacheClient.putEntries[Rate.Pair, Rate](
       cacheKeyName = config.cacheKeyName,
       timeout = Some(config.priceTimeout)
     )

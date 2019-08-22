@@ -13,7 +13,7 @@ object TestInstances {
 
   implicit val noopLogger: Logger[IO] = NoOpLogger.impl[IO]
 
-  val testCaffeineCache: Cache[Map[String, Json]] = CaffeineCache[Map[String, Json]]
+  val testCaffeineCache: Cache[Map[Any, Json]] = CaffeineCache[Map[Any, Json]]
 
   val testOffsetDateTime: OffsetDateTime = OffsetDateTime.of(
     LocalDateTime.of(2019, 8, 3, 0, 0, 0, 0),
