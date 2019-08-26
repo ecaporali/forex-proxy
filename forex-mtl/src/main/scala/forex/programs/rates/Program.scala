@@ -1,21 +1,23 @@
 package forex.programs.rates
 
+import cats.effect.Clock
 import cats.syntax.either._
 import cats.syntax.eq._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.applicativeError._
 import cats.{FlatMap, MonadError}
 import forex.config.RatesConfig
 import forex.domain._
 import forex.infrastructure.{CacheClient, Done}
 import forex.programs.ProgramErrorOr
 import forex.programs.rates.Converters._
-import forex.programs.rates.errors.Error.CachedRateNotFound
+import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed}
 import forex.programs.rates.errors.{Error, toProgramError}
 import forex.services.{RatesService, ServiceErrorOr}
 import io.chrisdavenport.log4cats.Logger
 
-class Program[F[_]: FlatMap: Logger] private[rates](
+class Program[F[_]: FlatMap: Logger: Clock] private[rates] (
     getFreshRates: => F[ServiceErrorOr[Seq[Rate]]],
     getCachedRate: Rate.Pair => F[Option[Rate]],
     setCachedRates: Map[Rate.Pair, Rate] => F[Done]
@@ -23,7 +25,7 @@ class Program[F[_]: FlatMap: Logger] private[rates](
     extends Algebra[F] {
 
   override def get(request: Protocol.GetRatesRequest): F[ProgramErrorOr[Rate]] =
-    if (request.from === request.to) F.pure(getFlatRate(request).asRight)
+    if (request.from === request.to) getFlatRate(request)
     else executeGetRequest(request.asPair)
 
   private def executeGetRequest(requestPair: Rate.Pair): F[ProgramErrorOr[Rate]] =
@@ -63,13 +65,15 @@ class Program[F[_]: FlatMap: Logger] private[rates](
       .get(requestPair)
       .toRight(CachedRateNotFound("Requested rate cannot be found"))
 
-  private def getFlatRate(request: Protocol.GetRatesRequest): Rate =
-    Rate(request.asPair, Price(1), Timestamp.now)
+  private def getFlatRate(request: Protocol.GetRatesRequest): F[ProgramErrorOr[Rate]] =
+    Timestamp.now
+      .map(Rate(request.asPair, Price(1), _).asRight[Error])
+      .recover { case _: Throwable => RateLookupFailed("Cannot create instance of Timestamp, please try again!").asLeft[Rate] }
 }
 
 object Program {
 
-  def apply[F[_]: Logger](
+  def apply[F[_]: Logger: Clock](
       config: RatesConfig,
       ratesService: RatesService[F],
       cacheClient: CacheClient[F]

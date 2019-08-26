@@ -1,16 +1,18 @@
 package forex.programs.rates
 
-import cats.effect.IO
+import cats.effect.{Clock, IO}
 import forex.TestInstances.{noopLogger, testOffsetDateTime}
-import forex.TestUtilsIO
 import forex.domain.Currency.{AUD, JPY}
 import forex.domain.{Price, Rate, RateFixtures, Timestamp}
 import forex.infrastructure.Done
 import forex.programs.rates.errors.Error.{CachedRateNotFound, RateLookupFailed, ServiceTemporaryUnavailable}
 import forex.services.rates.errors.Error.{OneForgeLookupFailed, OneForgeQuotaLimitExceeded}
+import forex.{TestInstances, TestUtilsIO}
 import org.scalatest.{FreeSpec, Matchers}
 
 class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
+
+  implicit val clock: Clock[IO] = new TestInstances.IOClock
 
   "Program" - {
 
@@ -67,7 +69,7 @@ class ProgramSpec extends FreeSpec with Matchers with TestUtilsIO {
         )
 
         val expectedProgram = program.get(Protocol.GetRatesRequest(AUD, JPY))
-        an [RateLookupFailed] should be thrownBy runIO(expectedProgram)
+        an[RateLookupFailed] should be thrownBy runIO(expectedProgram)
       }
 
       "should return ServiceTemporaryUnavailable exception when it exceeds the daily quota to fetch fresh rates" in {
