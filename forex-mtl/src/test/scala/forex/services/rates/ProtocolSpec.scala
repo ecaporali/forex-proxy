@@ -34,7 +34,7 @@ class ProtocolSpec extends FreeSpec with Matchers {
 
     "should successfully decode GetRatesResponse containing OneForgeRatePair" in {
       val expectedResult = GetRatesResponse(
-        Vector(
+        List(
           buildOneForgeRateResponse(Rate.Pair(EUR, USD), Price(1.12134), testOffsetDateTime),
           buildOneForgeRateResponse(Rate.Pair(USD, JPY), Price(106.101), testOffsetDateTime)
         )

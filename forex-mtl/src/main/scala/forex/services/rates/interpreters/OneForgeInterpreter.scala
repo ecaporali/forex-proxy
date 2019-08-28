@@ -1,7 +1,7 @@
 package forex.services.rates.interpreters
 
+import cats.MonadError
 import cats.data.EitherT
-import cats.effect.Sync
 import cats.implicits._
 import forex.config.OneForgeConfig
 import forex.domain.Rate
@@ -18,19 +18,19 @@ class OneForgeInterpreter[F[_]: Logger](
     oneForgeConfig: OneForgeConfig,
     fetchRates: Request[F] => F[ErrorOr[GetRatesResponse]],
     fetchQuota: Request[F] => F[ErrorOr[GetQuotaResponse]]
-)(implicit F: Sync[F])
+)(implicit F: MonadError[F, Throwable])
     extends Algebra[F] {
 
-  override def getRates: F[ServiceErrorOr[Seq[Rate]]] =
+  override def getRates: F[ServiceErrorOr[List[Rate]]] =
     (for {
-      _ <- EitherT(ensureAvailableQuotaOrError)
+      _                  <- EitherT(ensureAvailableQuotaOrError)
       freshRatesResponse <- EitherT(executeFetchRates)
     } yield freshRatesResponse.toRates).value
 
   private def ensureAvailableQuotaOrError: F[ServiceErrorOr[GetQuotaResponse]] = {
     val oneForgeRequestQuota = OneForgeApi.buildOneForgeRequestQuota[F](oneForgeConfig)
     for {
-      _ <- Logger[F].info(s"Fetching current quota from OneForge: ${oneForgeRequestQuota.uri.path}")
+      _                <- Logger[F].info(s"Fetching current quota from OneForge: ${oneForgeRequestQuota.uri.path}")
       getQuotaResponse <- fetchQuota(oneForgeRequestQuota).flatMap(F.fromEither)
     } yield verifyQuotaLimit(getQuotaResponse)
   }
@@ -38,15 +38,15 @@ class OneForgeInterpreter[F[_]: Logger](
   private def executeFetchRates: F[ServiceErrorOr[GetRatesResponse]] = {
     val oneForgeRequestQuotes = OneForgeApi.buildOneForgeRequestQuotes[F](oneForgeConfig)
     for {
-      _ <- Logger[F].info(s"Fetching fresh rates from OneForge: ${oneForgeRequestQuotes.uri.path}")
+      _                    <- Logger[F].info(s"Fetching fresh rates from OneForge: ${oneForgeRequestQuotes.uri.path}")
       errorOrRatesResponse <- fetchRates(oneForgeRequestQuotes).flatMap(logAndTransformError)
     } yield errorOrRatesResponse
   }
 
   private def verifyQuotaLimit(getQuotaResponse: GetQuotaResponse): ServiceErrorOr[GetQuotaResponse] = {
     val quota = getQuotaResponse.quota
-    if (quota.remaining > 0) Either.right(getQuotaResponse)
-    else Either.left(OneForgeQuotaLimitExceeded(s"Maximum daily quota reached, please try again in ${quota.hoursUntilReset} hour(s)"))
+    if (quota.remaining > 0) getQuotaResponse.asRight
+    else OneForgeQuotaLimitExceeded(s"Maximum daily quota reached, please try again in ${quota.hoursUntilReset} hour(s)").asLeft
   }
 
   private def logAndTransformError(

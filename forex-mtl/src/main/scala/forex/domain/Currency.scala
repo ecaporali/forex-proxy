@@ -23,7 +23,7 @@ object Currency extends Enum[Currency] {
 
   val values: immutable.IndexedSeq[Currency] = findValues
 
-  val fromToPairs: Seq[Rate.Pair] = for {
+  val uniqueProductPairs: Seq[Rate.Pair] = for {
     from <- values
     to <- values if from != to
   } yield Rate.Pair(from, to)

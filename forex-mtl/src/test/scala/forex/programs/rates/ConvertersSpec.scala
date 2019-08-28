@@ -6,11 +6,11 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ConvertersSpec extends FlatSpec with Matchers {
 
-  "toRatesMap" should "successfully convert rates into a map with the pair as key" in {
-    val rates = Vector(RateFixtures.buildRate())
+  "asRatesMap" should "successfully convert rates into a map with the pair as key" in {
+    val rates        = List(RateFixtures.buildRate())
     val expectedRate = rates.head
     val expectedResult =
-      Map(s"${expectedRate.pair.asString}" -> Rate(expectedRate.pair, expectedRate.price, expectedRate.timestamp))
-    rates.toRatesMap shouldBe expectedResult
+      Map(expectedRate.pair -> Rate(expectedRate.pair, expectedRate.price, expectedRate.timestamp))
+    rates.asRatesMap shouldBe expectedResult
   }
 }

@@ -26,17 +26,15 @@ class Application[F[_]: ConcurrentEffect: Timer] {
   def stream: Stream[F, Unit] =
     for {
       config <- Config.stream("app")
-
       httpClient <- BlazeClientBuilder[F](fromExecutor(newFixedThreadPool(config.http.client.maxConnections)))
-        .withMaxTotalConnections(config.http.client.maxConnections)
-        .withMaxConnectionsPerRequestKey(_ => config.http.client.maxConnections)
-        .withMaxWaitQueueLimit(-1)
-        .withRequestTimeout(config.http.client.timeout)
-        .stream
+                     .withMaxTotalConnections(config.http.client.maxConnections)
+                     .withMaxConnectionsPerRequestKey(_ => config.http.client.maxConnections)
+                     .withMaxWaitQueueLimit(-1)
+                     .withRequestTimeout(config.http.client.timeout)
+                     .stream
 
-      logger <- Stream.eval(Slf4jLogger.create[F])
-
-      caffeineCache <- Stream.eval(Sync[F].delay(CaffeineCache[Map[String, Json]]))
+      logger        <- Stream.eval(Slf4jLogger.create[F])
+      caffeineCache <- Stream.eval(Sync[F].delay(CaffeineCache[Map[Json, Json]]))
 
       module = Module[F](config, httpClient, caffeineCache, logger)
 
@@ -45,5 +43,4 @@ class Application[F[_]: ConcurrentEffect: Timer] {
             .withHttpApp(module.httpApp)
             .serve
     } yield ()
-
 }

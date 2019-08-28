@@ -38,7 +38,8 @@ The main assumptions taken while developing this application are as follow:
   requesting fresh rates from OneForge Api. This call does NOT increase the quota count towards the limit.
 - There are only 9 currencies supported in this application - it is just a matter of adding/removing them to/from the codebase to have them supported.
   The OneForge `/quotes` Api, returns all the currencies if the `pairs` query parameter gets removed. However, the domain Currency class must be updated
-  to support all of them.
+  to support all of them. **Note:** considering the limitation of a GET request (8KB), there are 701 possible combinations of unique pairs supported by OneForge,
+  this is well below the mentioned limit but it must be noted.
 - From the given requirements, it is clear that availability of the service is the main key point so I decided to make one call and return all of the supported currencies at once.
   (`The application should at least support 10.000 requests per day`)
   

@@ -14,10 +14,10 @@ object Converters {
       )
   }
 
-  private[rates] implicit class RateResponseOps(val rates: Seq[Rate]) {
-    def toRatesMap: Map[String, Rate] =
+  private[rates] implicit class RateResponseOps(val rates: List[Rate]) {
+    def asRatesMap: Map[Rate.Pair, Rate] =
       rates.map { rate =>
-        (rate.pair.asString, Rate(rate.pair, rate.price, rate.timestamp))
+        (rate.pair, Rate(rate.pair, rate.price, rate.timestamp))
       }.toMap
   }
 }

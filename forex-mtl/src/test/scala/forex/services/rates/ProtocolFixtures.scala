@@ -12,7 +12,7 @@ import forex.services.rates.Protocol.{ GetQuotaResponse, GetRatesResponse }
 object ProtocolFixtures {
 
   def buildGetRatesResponse(
-      ratesResponse: Seq[Protocol.RateResponse] = Vector(buildOneForgeRateResponse())
+      ratesResponse: List[Protocol.RateResponse] = List(buildOneForgeRateResponse())
   ): GetRatesResponse = GetRatesResponse(ratesResponse)
 
   def buildOneForgeRateResponse(

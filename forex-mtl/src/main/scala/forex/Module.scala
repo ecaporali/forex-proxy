@@ -1,9 +1,9 @@
 package forex
 
-import cats.effect.{ Concurrent, Timer }
+import cats.effect.{Concurrent, Timer}
 import forex.config.ApplicationConfig
 import forex.http.rates.RatesHttpRoutes
-import forex.infrastructure.{ CacheClient, HttpClient }
+import forex.infrastructure.{CacheClient, HttpClient}
 import forex.programs._
 import forex.services._
 import io.chrisdavenport.log4cats.Logger
@@ -11,7 +11,7 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.implicits._
-import org.http4s.server.middleware.{ AutoSlash, Timeout }
+import org.http4s.server.middleware.{AutoSlash, Timeout}
 import scalacache.Cache
 
 class Module[F[_]: Concurrent: Timer: Logger] private (
@@ -58,7 +58,7 @@ object Module {
   def apply[F[_]: Concurrent: Timer](
       config: ApplicationConfig,
       httpBlazeClient: Client[F],
-      scalaCache: Cache[Map[String, Json]],
+      scalaCache: Cache[Map[Json, Json]],
       log4cats: Logger[F]
   ): Module[F] = {
     implicit val logger: Logger[F] = log4cats

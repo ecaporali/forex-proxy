@@ -8,7 +8,7 @@ import org.http4s.Request
 object OneForgeApi {
 
   def buildOneForgeRequestQuotes[F[_]](oneForgeConfig: OneForgeConfig): Request[F] = {
-    val pairs = Currency.fromToPairs.map(_.asString).mkString(",")
+    val pairs = Currency.uniqueProductPairs.map(_.asString).mkString(",")
     createGetRequest[F](
       uri = (oneForgeConfig.uri / "quotes")
         .withQueryParam("pairs", pairs)

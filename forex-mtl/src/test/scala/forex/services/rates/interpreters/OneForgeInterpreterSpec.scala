@@ -13,7 +13,7 @@ import org.scalatest.{FreeSpec, Matchers}
 class OneForgeInterpreterSpec extends FreeSpec with Matchers with TestUtilsIO {
 
   "OneForgeInterpreter" - {
-    val successfulGetRatesResponse = buildGetRatesResponse(Vector(buildOneForgeRateResponse()))
+    val successfulGetRatesResponse = buildGetRatesResponse(List(buildOneForgeRateResponse()))
 
     val interpreterSuccessful: Algebra[IO] = new OneForgeInterpreter[IO](
       oneForgeConfig = testApplicationConfig.http.oneForge,
