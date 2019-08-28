@@ -8,7 +8,7 @@ import io.circe.{Decoder, HCursor}
 
 object Protocol {
 
-  case class GetRatesResponse(rates: Seq[RateResponse])
+  case class GetRatesResponse(rates: List[RateResponse])
   case class GetQuotaResponse(quota: QuotaResponse)
 
   sealed trait RateResponse {

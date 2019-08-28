@@ -21,7 +21,7 @@ class OneForgeInterpreter[F[_]: Logger](
 )(implicit F: MonadError[F, Throwable])
     extends Algebra[F] {
 
-  override def getRates: F[ServiceErrorOr[Seq[Rate]]] =
+  override def getRates: F[ServiceErrorOr[List[Rate]]] =
     (for {
       _                  <- EitherT(ensureAvailableQuotaOrError)
       freshRatesResponse <- EitherT(executeFetchRates)

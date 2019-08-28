@@ -7,7 +7,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class ConvertersSpec extends FlatSpec with Matchers {
 
   "asRatesMap" should "successfully convert rates into a map with the pair as key" in {
-    val rates        = Vector(RateFixtures.buildRate())
+    val rates        = List(RateFixtures.buildRate())
     val expectedRate = rates.head
     val expectedResult =
       Map(expectedRate.pair -> Rate(expectedRate.pair, expectedRate.price, expectedRate.timestamp))

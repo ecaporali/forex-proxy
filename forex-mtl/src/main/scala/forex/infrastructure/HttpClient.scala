@@ -24,7 +24,7 @@ object HttpClient {
 
   def createGetRequest[F[_]](
       uri: Uri,
-      headers: Seq[Header] = List(JsonContentTypeHeader)
+      headers: List[Header] = List(JsonContentTypeHeader)
   ): Request[F] =
     Request[F](method = Method.GET, uri = uri)
       .withHeaders(Headers.of(headers: _*))

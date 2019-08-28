@@ -7,7 +7,7 @@ object Converters {
   import Protocol._
 
   private[rates] implicit class GetRatesResponseOps(val rateResponse: GetRatesResponse) {
-    def toRates: Seq[Rate] =
+    def toRates: List[Rate] =
       rateResponse.rates.map(
         rateResponse =>
           Rate(

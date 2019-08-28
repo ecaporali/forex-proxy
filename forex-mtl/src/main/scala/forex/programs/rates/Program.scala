@@ -18,7 +18,7 @@ import forex.services.{RatesService, ServiceErrorOr}
 import io.chrisdavenport.log4cats.Logger
 
 class Program[F[_]: FlatMap: Logger: Clock] private[rates] (
-    getFreshRates: => F[ServiceErrorOr[Seq[Rate]]],
+    getFreshRates: => F[ServiceErrorOr[List[Rate]]],
     getCachedRate: Rate.Pair => F[Option[Rate]],
     setCachedRates: Map[Rate.Pair, Rate] => F[Done]
 )(implicit F: MonadError[F, Throwable])
