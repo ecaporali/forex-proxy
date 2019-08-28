@@ -1,42 +1,89 @@
-# Paidy Take-Home Coding Exercises
+###### Project: Forex Rate Proxy<br/> Author: Enrico Caporali <br/> Date Submitted: 12 August, 2019
 
-## What to expect?
-We expect that the amount of effort to do any of these exercises is in the range of about 4-6 hours of actual work. We also understand that your time is valuable, and in anyone's busy schedule that constitutes a fairly substantial chunk of time, so we really appreciate any effort you put in to helping us build a solid team.
+# Forex Rate Proxy
 
-## What we are looking for?
-**Keep it simple**. Really. 4-6 hours isn't a lot of time and we really don't want you spending too much more time on it than that.
+## Application Design
 
-**Treat it like production code**. That is, develop your software in the same way that you would for any code that is intended to be deployed to production. These may be toy exercises, but we really would like to get an idea of how you build code on a day-to-day basis.
+In order to overcome the OneForge request per day limitation, a fast and reliable cache is required with the ability to have TTL on the entry values.
+In addition, I decided to make a single request every 300 seconds and retrieve fresh rates for all the supported currency pairs.
+This led me to update the service `Algebra` from `get: Pair => Error Either Rate` to `getRates: => Error Either Seq[Rate]`.
+OneForge seems to have a fast response time regardless of how many pairs are passed into the request, plus the size of the payload returned
+is not above `70 KB`.
+From a design point of view, the cache was added to the `Program` instead of the `OneForgeInterpreter` simply because a decision can be made in
+the future to upgrade to a different OneForge tier (which will allow to have more requests per day) but still keeping the cache as mechanism to
+increase performance. Moreover, another interpreter from a different provider could be added and  and the cache will be left unchanged. 
 
-## How to submit?
-You can do this however you see fit - you can email us a tarball, a pointer to download your code from somewhere or just a link to a source control repository. Make sure your submission includes a small **README**, documenting any assumptions, simplifications and/or choices you made, as well as a short description of how to run the code and/or tests. Finally, to help us review your code, please split your commit history in sensible chunks (at least separate the initial provided code from your personal additions).
+Moreover, `Monad transformers` are not famous for having high performance in scala but for simplicity, after careful consideration, I decided to use 
+`EitherT` monad transformer in the `OneForgeInterpreter as there will only be a request every 300 seconds. If this becomes a bottleneck, a small 
+refactoring will be needed to overcome this issue.  
 
-## The Interview:
-After you submit your code, we will contact you to discuss and potentially arrange an in-person interview with some of the team.
-The interview will cover a wide range of technical and social aspects relevant to working at Paidy, but importantly for this exercise: we will also take the opportunity to step through your submitted code with you.
+I created `HttpClient` and `CacheClient` as third-party library wrappers because, in general, it is not good practice to leak the internals throughout the codebase.
 
-## The Exercises:
-### 1. [Platform] Build an API for managing users
-The complete specification for this exercise can be found in the [UsersAPI.md](UsersAPI.md).
+## External Libraries decisions
 
-### 2. [Frontend] Build a SPA that displays weather information
-The complete specification for this exercise can be found in the [Weather.md](Weather.md).
+I upgraded some of the already included libraries to keep them as up-to-date as possible and removed the conflicts by setting specific versions to be used.
+The following points summarize the decisions made:
 
-### 3. [Platform] Build a local proxy for currency exchange rates
-The complete specification for this exercise can be found in the [Forex.md](Forex.md).
+- `scalacache` was chosen as external library wrapper with `Caffeine` as the actual underlying cache.
+- `http4s-client` was chosen to make http requests within the application
+- `log4cats` was chosen to have effectful logging throughout the codebase (with `cats` support for `IO` monad)
+- `enumeratum` was chosen to maximise the use of the currency domain objects which provides useful benefits. For example, the function `findValues` 
+  will remove the risk of forgetting to add/remove other currencies to/from a custom list require to calculate the unique product between them.
+  I am not really in favour of using enumerations in scala, but considering the use case and this library's documentation, I decided to add it to the project.
 
-### 4. [Mobile] Create a Grouped Card View
-The complete specification for this exercise can be found in the [GroupedCardView.md](GroupedCardView.md).
+## Assumptions
+The main assumptions taken while developing this application are as follow:
 
-## F.A.Q.
-1) _Is it OK to share your solutions publicly?_
-Yes, the questions are not prescriptive, the process and discussion around the code is the valuable part. You do the work, you own the code. Given we are asking you to give up your time, it is entirely reasonable for you to keep and use your solution as you see fit.
+- Considering that friendly error messages should be returned, I decided to call the `/quota` endpoint to check whether it is possible to proceed with
+  requesting fresh rates from OneForge Api. This call does NOT increase the quota count towards the limit.
+- There are only 9 currencies supported in this application - it is just a matter of adding/removing them to/from the codebase to have them supported.
+  The OneForge `/quotes` Api, returns all the currencies if the `pairs` query parameter gets removed. However, the domain Currency class must be updated
+  to support all of them. **Note:** considering the limitation of a GET request (8KB), there are 701 possible combinations of unique pairs supported by OneForge,
+  this is well below the mentioned limit but it must be noted.
+- From the given requirements, it is clear that availability of the service is the main key point so I decided to make one call and return all of the supported currencies at once.
+  (`The application should at least support 10.000 requests per day`)
+  
+  
+- Considering this system is not in production, I modified the `/rates` endpoint to include versioning `/v1/rates` 
+  as this will benefit future development and deployments. 
+- I added support for the conversion between two equal currencies (eg. `from JPY to JPY`) as it seems to be a valid use case. This support generates a response on the fly
+  and returns a flat rate with price equal to 1.
 
-2) _Should I do X?_
-For any value of X, it is up to you, we intentionally leave the problem a little open-ended and will leave it up to you to provide us with what you see as important. Just remember the rough time frame of the project. If it is going to take you a couple of days, it isn't essential.
+## Development
 
-3) _Something is ambiguous, and I don't know what to do?_
-The first thing is: don't get stuck. We really don't want to trip you up intentionally, we are just attempting to see how you approach problems. That said, there are intentional ambiguities in the specifications, mainly to see how you fill in those gaps, and how you make design choices.
-If you really feel stuck, our first preference is for you to make a decision and document it with your submission - in this case there is really no wrong answer. If you feel it is not possible to do this, just send us an email and we will try to clarify or correct the question for you.
+in order to run this project, the `ONE_FORGE_API_KEY` environment variable must be set to a valid OneForge API key otherwise the project will not run.
 
-Good luck!
+### How to run unit tests
+```
+sbt test
+```
+
+### How to run unit tests with coverage
+```
+sbt check
+```
+
+### How to run the application
+```
+sbt run
+```
+
+## Coverage
+The coverage percentage for this project must be above **95%** and it currently stands at:  
+`96.37%`
+
+## Additional possible improvements
+- Include integration tests and load tests (possibly with `Gatlin`) to assert the performance and response of this proxy and the upstream
+  OneForge Api.
+- If a distributed cache is required, in case multiple service instances read/write to it, `Caffeine` cache should be replaced with
+  `Redis` or `Memcache` which are perfect for this use case.
+- Add docker support for application by including a `docker-compose.yml` file.
+- If multiple Rates interpreters are included, the `/quota` request could be added into the algebra as `/healthcheck` and used in the Program to route requests
+  to the first interpreter having remaining quota > 0.  
+
+## Library reference
+- [scalacache](https://cb372.github.io/scalacache/) 
+- [caffeine](https://github.com/ben-manes/caffeine/)
+- [http4s-blaze-client](https://http4s.org/v0.18/client/)
+- [log4cats](https://christopherdavenport.github.io/log4cats/)
+- [enumeratum](https://github.com/lloydmeta/enumeratum/)
