@@ -14,7 +14,7 @@ the future to upgrade to a different OneForge tier (which will allow to have mor
 increase performance. Moreover, another interpreter from a different provider could be added and  and the cache will be left unchanged. 
 
 Moreover, `Monad transformers` are not famous for having high performance in scala but for simplicity, after careful consideration, I decided to use 
-`EitherT` monad transformer in the `OneForgeInterpreter as there will only be a request every 300 seconds. If this becomes a bottleneck, a small 
+`EitherT` monad transformer in the `OneForgeInterpreter` as there will only be a request every 300 seconds. If this becomes a bottleneck, a small 
 refactoring will be needed to overcome this issue.  
 
 I created `HttpClient` and `CacheClient` as third-party library wrappers because, in general, it is not good practice to leak the internals throughout the codebase.
